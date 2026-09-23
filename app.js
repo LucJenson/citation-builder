@@ -1,11 +1,19 @@
 /* =========================================================
    CITATION BUILDER
-   Version 1.0 Prototype
+   Version 0.2
 
    Current support:
    - MLA 9
-   - Books
-   - Works Cited storage
+       - Book Works Cited entry
+       - Book in-text citation
+
+   - Chicago 18 Notes & Bibliography
+       - Book bibliography entry
+       - First footnote
+       - Shortened footnote
+
+   Saved sources contain RAW SOURCE DATA.
+   Formatting is generated dynamically from that data.
 ========================================================= */
 
 
@@ -13,38 +21,111 @@
    ELEMENTS
 ========================================================= */
 
-const citationForm = document.getElementById("citationForm");
+const citationStyleSelect =
+    document.getElementById("citationStyle");
 
-const authorFirstInput = document.getElementById("authorFirst");
-const authorLastInput = document.getElementById("authorLast");
+const sourceTypeSelect =
+    document.getElementById("sourceType");
 
-const bookTitleInput = document.getElementById("bookTitle");
-const bookSubtitleInput = document.getElementById("bookSubtitle");
+const citationForm =
+    document.getElementById("citationForm");
 
-const publisherInput = document.getElementById("publisher");
+
+const authorFirstInput =
+    document.getElementById("authorFirst");
+
+const authorLastInput =
+    document.getElementById("authorLast");
+
+const bookTitleInput =
+    document.getElementById("bookTitle");
+
+const bookSubtitleInput =
+    document.getElementById("bookSubtitle");
+
+const publisherInput =
+    document.getElementById("publisher");
+
 const publicationYearInput =
     document.getElementById("publicationYear");
 
-const editionInput = document.getElementById("edition");
-const translatorInput = document.getElementById("translator");
+const editionInput =
+    document.getElementById("edition");
+
+const translatorInput =
+    document.getElementById("translator");
+
+const pageNumberInput =
+    document.getElementById("pageNumber");
+
+
+const styleExplanation =
+    document.getElementById("styleExplanation");
+
+const mainOutputLabel =
+    document.getElementById("mainOutputLabel");
+
+const mainOutputHelp =
+    document.getElementById("mainOutputHelp");
+
+const pageNumberHelp =
+    document.getElementById("pageNumberHelp");
+
 
 const citationPreview =
     document.getElementById("citationPreview");
 
+const inTextPreview =
+    document.getElementById("inTextPreview");
+
+const firstFootnotePreview =
+    document.getElementById("firstFootnotePreview");
+
+const shortFootnotePreview =
+    document.getElementById("shortFootnotePreview");
+
+
+const mlaOutputs =
+    document.getElementById("mlaOutputs");
+
+const chicagoOutputs =
+    document.getElementById("chicagoOutputs");
+
+
 const validationMessage =
     document.getElementById("validationMessage");
+
 
 const addCitationButton =
     document.getElementById("addCitationButton");
 
-const copyCitationButton =
-    document.getElementById("copyCitationButton");
+const copyMainCitationButton =
+    document.getElementById("copyMainCitationButton");
 
-const copyBibliographyButton =
-    document.getElementById("copyBibliographyButton");
+const copyInTextButton =
+    document.getElementById("copyInTextButton");
+
+const copyFirstFootnoteButton =
+    document.getElementById("copyFirstFootnoteButton");
+
+const copyShortFootnoteButton =
+    document.getElementById("copyShortFootnoteButton");
+
+const copyCollectionButton =
+    document.getElementById("copyCollectionButton");
 
 const clearBibliographyButton =
     document.getElementById("clearBibliographyButton");
+
+
+const collectionHeading =
+    document.getElementById("collectionHeading");
+
+const collectionDescription =
+    document.getElementById("collectionDescription");
+
+const paperHeading =
+    document.getElementById("paperHeading");
 
 const worksCitedList =
     document.getElementById("worksCitedList");
@@ -54,95 +135,330 @@ const worksCitedList =
    STATE
 ========================================================= */
 
-let savedCitations =
-    JSON.parse(localStorage.getItem("citationBuilderSources")) || [];
+const STORAGE_KEY =
+    "citationBuilderSourcesV2";
+
+
+let savedSources =
+    loadSources();
 
 
 /* =========================================================
-   HELPERS
+   STYLE CONFIGURATION
+========================================================= */
+
+const STYLE_CONFIG = {
+
+    mla9: {
+
+        name: "MLA 9",
+
+        collectionName: "Works Cited",
+
+        collectionPossessive: "Works Cited",
+
+        mainLabel:
+            "MLA 9 — Works Cited Entry",
+
+        mainHelp:
+            "This is the full citation that appears on your Works Cited page.",
+
+        explanationTitle:
+            "MLA 9",
+
+        explanation:
+            "MLA uses a Works Cited page for full source information and parenthetical in-text citations inside the paper."
+
+    },
+
+
+    chicago18: {
+
+        name:
+            "Chicago 18 — Notes & Bibliography",
+
+        collectionName:
+            "Bibliography",
+
+        collectionPossessive:
+            "Bibliography",
+
+        mainLabel:
+            "Chicago 18 — Bibliography Entry",
+
+        mainHelp:
+            "This is the full citation that appears in your bibliography.",
+
+        explanationTitle:
+            "Chicago Notes & Bibliography",
+
+        explanation:
+            "Chicago Notes & Bibliography uses numbered footnotes in the paper and a bibliography for full source information."
+
+    }
+
+};
+
+
+/* =========================================================
+   BASIC HELPERS
 ========================================================= */
 
 function clean(value) {
-    return value.trim();
+
+    return String(value || "").trim();
+
 }
 
 
 function escapeHTML(value) {
 
-    const div = document.createElement("div");
+    const div =
+        document.createElement("div");
 
-    div.textContent = value;
+    div.textContent =
+        String(value || "");
 
     return div.innerHTML;
+
 }
 
 
 function ensurePeriod(value) {
 
-    if (!value) {
+    const cleaned =
+        clean(value);
+
+    if (!cleaned) {
         return "";
     }
 
-    return /[.!?]$/.test(value)
-        ? value
-        : value + ".";
+
+    if (/[.!?]$/.test(cleaned)) {
+        return cleaned;
+    }
+
+
+    return cleaned + ".";
+
+}
+
+
+function stripFinalPunctuation(value) {
+
+    return clean(value)
+        .replace(/[.,;:!?]+$/, "");
+
+}
+
+
+function getFullTitle(source) {
+
+    if (!source.subtitle) {
+        return source.title;
+    }
+
+
+    return `${source.title}: ${source.subtitle}`;
+
+}
+
+
+function normalizeEdition(value) {
+
+    const edition =
+        clean(value);
+
+    if (!edition) {
+        return "";
+    }
+
+
+    if (
+        /\b(ed|edition)\b/i.test(edition)
+    ) {
+        return edition;
+    }
+
+
+    return `${edition} ed.`;
+
 }
 
 
 /* =========================================================
-   READ FORM
+   LOAD / SAVE
 ========================================================= */
 
-function getBookData() {
+function loadSources() {
+
+    /*
+        V2 stores raw bibliographic information.
+
+        We intentionally do NOT migrate old formatted
+        citation strings because they do not contain
+        reliable structured source data.
+    */
+
+    try {
+
+        const stored =
+            localStorage.getItem(STORAGE_KEY);
+
+        if (!stored) {
+            return [];
+        }
+
+
+        const parsed =
+            JSON.parse(stored);
+
+        return Array.isArray(parsed)
+            ? parsed
+            : [];
+
+    } catch (error) {
+
+        console.error(
+            "Could not load saved sources:",
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+function saveSources() {
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(savedSources)
+    );
+
+}
+
+
+/* =========================================================
+   READ CURRENT FORM
+========================================================= */
+
+function getCurrentSource() {
 
     return {
-        authorFirst: clean(authorFirstInput.value),
-        authorLast: clean(authorLastInput.value),
 
-        title: clean(bookTitleInput.value),
-        subtitle: clean(bookSubtitleInput.value),
+        id: null,
 
-        publisher: clean(publisherInput.value),
-        year: clean(publicationYearInput.value),
+        type:
+            sourceTypeSelect.value,
 
-        edition: clean(editionInput.value),
-        translator: clean(translatorInput.value)
+        author: {
+            first:
+                clean(authorFirstInput.value),
+
+            last:
+                clean(authorLastInput.value)
+        },
+
+        title:
+            clean(bookTitleInput.value),
+
+        subtitle:
+            clean(bookSubtitleInput.value),
+
+        publisher:
+            clean(publisherInput.value),
+
+        year:
+            clean(publicationYearInput.value),
+
+        edition:
+            clean(editionInput.value),
+
+        translator:
+            clean(translatorInput.value)
+
     };
 
 }
 
 
 /* =========================================================
-   MLA BOOK CITATION
+   VALIDATION
 ========================================================= */
 
-function buildMLABookCitation(data) {
+function validateBook(source) {
 
-    let htmlParts = [];
-    let plainParts = [];
+    const missing = [];
+
+
+    if (!source.title) {
+        missing.push("book title");
+    }
+
+
+    if (!source.publisher) {
+        missing.push("publisher");
+    }
+
+
+    if (!source.year) {
+        missing.push("publication year");
+    }
+
+
+    return missing;
+
+}
+
+
+/* =========================================================
+   MLA 9 — BOOK
+========================================================= */
+
+function formatMLABook(source) {
+
+    const htmlParts = [];
+    const plainParts = [];
 
 
     /* AUTHOR */
 
-    if (data.authorLast || data.authorFirst) {
+    if (
+        source.author.last ||
+        source.author.first
+    ) {
 
         let author = "";
 
-        if (data.authorLast && data.authorFirst) {
+
+        if (
+            source.author.last &&
+            source.author.first
+        ) {
 
             author =
-                `${data.authorLast}, ${data.authorFirst}`;
+                `${source.author.last}, ${source.author.first}`;
 
         } else {
 
             author =
-                data.authorLast || data.authorFirst;
+                source.author.last ||
+                source.author.first;
 
         }
 
-        author = ensurePeriod(author);
 
-        htmlParts.push(escapeHTML(author));
+        author =
+            ensurePeriod(author);
+
+
+        htmlParts.push(
+            escapeHTML(author)
+        );
+
         plainParts.push(author);
 
     }
@@ -150,33 +466,30 @@ function buildMLABookCitation(data) {
 
     /* TITLE */
 
-    if (data.title) {
+    if (source.title) {
 
-        let fullTitle = data.title;
+        const title =
+            ensurePeriod(
+                getFullTitle(source)
+            );
 
-        if (data.subtitle) {
-
-            fullTitle += `: ${data.subtitle}`;
-
-        }
-
-        fullTitle = ensurePeriod(fullTitle);
 
         htmlParts.push(
-            `<em>${escapeHTML(fullTitle)}</em>`
+            `<em>${escapeHTML(title)}</em>`
         );
 
-        plainParts.push(fullTitle);
+        plainParts.push(title);
 
     }
 
 
     /* TRANSLATOR */
 
-    if (data.translator) {
+    if (source.translator) {
 
         const translator =
-            `Translated by ${data.translator},`;
+            `Translated by ${source.translator},`;
+
 
         htmlParts.push(
             escapeHTML(translator)
@@ -189,17 +502,11 @@ function buildMLABookCitation(data) {
 
     /* EDITION */
 
-    if (data.edition) {
+    if (source.edition) {
 
-        let edition = data.edition;
+        const edition =
+            `${normalizeEdition(source.edition)},`;
 
-        if (!edition.toLowerCase().includes("ed")) {
-
-            edition += " ed.";
-
-        }
-
-        edition += ",";
 
         htmlParts.push(
             escapeHTML(edition)
@@ -212,32 +519,40 @@ function buildMLABookCitation(data) {
 
     /* PUBLISHER + YEAR */
 
-    if (data.publisher || data.year) {
-
-        let publication = "";
-
-        if (data.publisher) {
-
-            publication += data.publisher;
-
-        }
+    let publication = "";
 
 
-        if (data.publisher && data.year) {
+    if (source.publisher) {
 
-            publication += ", ";
+        publication +=
+            source.publisher;
 
-        }
-
-
-        if (data.year) {
-
-            publication += data.year;
-
-        }
+    }
 
 
-        publication = ensurePeriod(publication);
+    if (
+        source.publisher &&
+        source.year
+    ) {
+
+        publication += ", ";
+
+    }
+
+
+    if (source.year) {
+
+        publication +=
+            source.year;
+
+    }
+
+
+    if (publication) {
+
+        publication =
+            ensurePeriod(publication);
+
 
         htmlParts.push(
             escapeHTML(publication)
@@ -249,44 +564,627 @@ function buildMLABookCitation(data) {
 
 
     return {
-        html: htmlParts.join(" "),
-        plain: plainParts.join(" ")
+
+        html:
+            htmlParts.join(" "),
+
+        plain:
+            plainParts.join(" ")
+
     };
 
 }
 
 
 /* =========================================================
-   VALIDATION
+   MLA 9 — IN-TEXT CITATION
 ========================================================= */
 
-function validateBook(data) {
+function formatMLAInText(
+    source,
+    page
+) {
 
-    const missing = [];
+    let identifier = "";
 
 
-    if (!data.title) {
+    if (source.author.last) {
 
-        missing.push("book title");
+        identifier =
+            source.author.last;
+
+    } else if (source.author.first) {
+
+        identifier =
+            source.author.first;
+
+    } else if (source.title) {
+
+        /*
+            No author:
+            use a shortened version of the title.
+
+            For now we use the complete title.
+            More sophisticated title shortening can
+            be added later.
+        */
+
+        identifier =
+            source.title;
 
     }
 
 
-    if (!data.publisher) {
+    if (!identifier) {
 
-        missing.push("publisher");
-
-    }
-
-
-    if (!data.year) {
-
-        missing.push("publication year");
+        return {
+            html: "",
+            plain: ""
+        };
 
     }
 
 
-    return missing;
+    let plain =
+        identifier;
+
+
+    if (page) {
+
+        plain += ` ${page}`;
+
+    }
+
+
+    plain =
+        `(${plain})`;
+
+
+    return {
+
+        html:
+            escapeHTML(plain),
+
+        plain
+
+    };
+
+}
+
+
+/* =========================================================
+   CHICAGO 18 — BIBLIOGRAPHY
+========================================================= */
+
+function formatChicagoBookBibliography(
+    source
+) {
+
+    const htmlParts = [];
+    const plainParts = [];
+
+
+    /* AUTHOR */
+
+    if (
+        source.author.last ||
+        source.author.first
+    ) {
+
+        let author = "";
+
+
+        if (
+            source.author.last &&
+            source.author.first
+        ) {
+
+            author =
+                `${source.author.last}, ${source.author.first}`;
+
+        } else {
+
+            author =
+                source.author.last ||
+                source.author.first;
+
+        }
+
+
+        author =
+            ensurePeriod(author);
+
+
+        htmlParts.push(
+            escapeHTML(author)
+        );
+
+        plainParts.push(author);
+
+    }
+
+
+    /* TITLE */
+
+    if (source.title) {
+
+        const title =
+            ensurePeriod(
+                getFullTitle(source)
+            );
+
+
+        htmlParts.push(
+            `<em>${escapeHTML(title)}</em>`
+        );
+
+        plainParts.push(title);
+
+    }
+
+
+    /* TRANSLATOR */
+
+    if (source.translator) {
+
+        const translator =
+            `Translated by ${source.translator}.`;
+
+
+        htmlParts.push(
+            escapeHTML(translator)
+        );
+
+        plainParts.push(translator);
+
+    }
+
+
+    /* EDITION */
+
+    if (source.edition) {
+
+        const edition =
+            ensurePeriod(
+                normalizeEdition(
+                    source.edition
+                )
+            );
+
+
+        htmlParts.push(
+            escapeHTML(edition)
+        );
+
+        plainParts.push(edition);
+
+    }
+
+
+    /* PUBLISHER + YEAR */
+
+    let publication = "";
+
+
+    if (source.publisher) {
+
+        publication +=
+            source.publisher;
+
+    }
+
+
+    if (
+        source.publisher &&
+        source.year
+    ) {
+
+        publication += ", ";
+
+    }
+
+
+    if (source.year) {
+
+        publication +=
+            source.year;
+
+    }
+
+
+    if (publication) {
+
+        publication =
+            ensurePeriod(publication);
+
+
+        htmlParts.push(
+            escapeHTML(publication)
+        );
+
+        plainParts.push(publication);
+
+    }
+
+
+    return {
+
+        html:
+            htmlParts.join(" "),
+
+        plain:
+            plainParts.join(" ")
+
+    };
+
+}
+
+
+/* =========================================================
+   CHICAGO 18 — FIRST FOOTNOTE
+========================================================= */
+
+function formatChicagoFirstFootnote(
+    source,
+    page
+) {
+
+    const htmlParts = [];
+    const plainParts = [];
+
+
+    /* AUTHOR */
+
+    let author = "";
+
+
+    if (
+        source.author.first &&
+        source.author.last
+    ) {
+
+        author =
+            `${source.author.first} ${source.author.last}`;
+
+    } else {
+
+        author =
+            source.author.first ||
+            source.author.last;
+
+    }
+
+
+    if (author) {
+
+        htmlParts.push(
+            escapeHTML(author)
+        );
+
+        plainParts.push(author);
+
+    }
+
+
+    /* TITLE */
+
+    if (source.title) {
+
+        const title =
+            getFullTitle(source);
+
+
+        htmlParts.push(
+            `<em>${escapeHTML(title)}</em>`
+        );
+
+        plainParts.push(title);
+
+    }
+
+
+    /* PUBLICATION INFORMATION */
+
+    let publicationInfo = "";
+
+
+    if (source.publisher) {
+
+        publicationInfo +=
+            source.publisher;
+
+    }
+
+
+    if (
+        source.publisher &&
+        source.year
+    ) {
+
+        publicationInfo += ", ";
+
+    }
+
+
+    if (source.year) {
+
+        publicationInfo +=
+            source.year;
+
+    }
+
+
+    let html =
+        htmlParts.join(", ");
+
+    let plain =
+        plainParts.join(", ");
+
+
+    if (publicationInfo) {
+
+        html +=
+            ` (${escapeHTML(publicationInfo)})`;
+
+        plain +=
+            ` (${publicationInfo})`;
+
+    }
+
+
+    if (page) {
+
+        html +=
+            `, ${escapeHTML(page)}`;
+
+        plain +=
+            `, ${page}`;
+
+    }
+
+
+    html =
+        ensureHTMLPeriod(html);
+
+    plain =
+        ensurePeriod(plain);
+
+
+    return {
+        html,
+        plain
+    };
+
+}
+
+
+/* =========================================================
+   CHICAGO 18 — SHORTENED FOOTNOTE
+========================================================= */
+
+function formatChicagoShortFootnote(
+    source,
+    page
+) {
+
+    const htmlParts = [];
+    const plainParts = [];
+
+
+    /* AUTHOR */
+
+    const author =
+        source.author.last ||
+        source.author.first;
+
+
+    if (author) {
+
+        htmlParts.push(
+            escapeHTML(author)
+        );
+
+        plainParts.push(author);
+
+    }
+
+
+    /* SHORT TITLE */
+
+    if (source.title) {
+
+        const title =
+            source.title;
+
+
+        htmlParts.push(
+            `<em>${escapeHTML(title)}</em>`
+        );
+
+        plainParts.push(title);
+
+    }
+
+
+    let html =
+        htmlParts.join(", ");
+
+    let plain =
+        plainParts.join(", ");
+
+
+    if (page) {
+
+        html +=
+            `, ${escapeHTML(page)}`;
+
+        plain +=
+            `, ${page}`;
+
+    }
+
+
+    html =
+        ensureHTMLPeriod(html);
+
+    plain =
+        ensurePeriod(plain);
+
+
+    return {
+        html,
+        plain
+    };
+
+}
+
+
+/* =========================================================
+   HTML PERIOD HELPER
+========================================================= */
+
+function ensureHTMLPeriod(html) {
+
+    const cleaned =
+        clean(html);
+
+
+    if (!cleaned) {
+        return "";
+    }
+
+
+    if (/[.!?]$/.test(cleaned)) {
+        return cleaned;
+    }
+
+
+    return cleaned + ".";
+
+}
+
+
+/* =========================================================
+   FORMATTER ROUTER
+========================================================= */
+
+function formatMainCitation(
+    source,
+    style
+) {
+
+    if (
+        source.type !== "book"
+    ) {
+
+        return {
+            html: "",
+            plain: ""
+        };
+
+    }
+
+
+    if (style === "mla9") {
+
+        return formatMLABook(source);
+
+    }
+
+
+    if (style === "chicago18") {
+
+        return formatChicagoBookBibliography(
+            source
+        );
+
+    }
+
+
+    return {
+        html: "",
+        plain: ""
+    };
+
+}
+
+
+/* =========================================================
+   STYLE INTERFACE
+========================================================= */
+
+function updateStyleInterface() {
+
+    const style =
+        citationStyleSelect.value;
+
+    const config =
+        STYLE_CONFIG[style];
+
+
+    styleExplanation.innerHTML =
+        `<strong>${escapeHTML(
+            config.explanationTitle
+        )}</strong>
+        ${escapeHTML(
+            config.explanation
+        )}`;
+
+
+    mainOutputLabel.textContent =
+        config.mainLabel;
+
+
+    mainOutputHelp.textContent =
+        config.mainHelp;
+
+
+    collectionHeading.textContent =
+        `My ${config.collectionName}`;
+
+
+    paperHeading.textContent =
+        config.collectionName;
+
+
+    addCitationButton.textContent =
+        `Add to My ${config.collectionName}`;
+
+
+    copyCollectionButton.textContent =
+        `Copy ${config.collectionName}`;
+
+
+    if (style === "mla9") {
+
+        mlaOutputs.hidden =
+            false;
+
+        chicagoOutputs.hidden =
+            true;
+
+
+        pageNumberHelp.textContent =
+            "Enter the page containing the information you used. Note: This is not included on the Works Cited.";
+
+    } else {
+
+        mlaOutputs.hidden =
+            true;
+
+        chicagoOutputs.hidden =
+            false;
+
+
+        pageNumberHelp.textContent =
+            "Enter the page containing the information you used. Note: This is not included in the Bibliography.";
+
+    }
+
+
+    updatePreview();
+
+    renderCollection();
 
 }
 
@@ -297,32 +1195,136 @@ function validateBook(data) {
 
 function updatePreview() {
 
-    const data = getBookData();
+    const source =
+        getCurrentSource();
 
-    const citation =
-        buildMLABookCitation(data);
+    const style =
+        citationStyleSelect.value;
+
+    const page =
+        clean(pageNumberInput.value);
 
 
-    if (!citation.plain) {
+    const mainCitation =
+        formatMainCitation(
+            source,
+            style
+        );
+
+
+    /* MAIN CITATION */
+
+    if (!mainCitation.plain) {
 
         citationPreview.innerHTML =
             `<span class="placeholder-text">
                 Your citation will appear here.
             </span>`;
 
-        validationMessage.textContent = "";
+    } else {
 
-        return;
+        citationPreview.innerHTML =
+            mainCitation.html;
 
     }
 
 
-    citationPreview.innerHTML =
-        citation.html;
+    /* MLA */
 
+    if (style === "mla9") {
+
+        const inText =
+            formatMLAInText(
+                source,
+                page
+            );
+
+
+        if (!inText.plain) {
+
+            inTextPreview.innerHTML =
+                `<span class="placeholder-text">
+                    Your in-text citation will appear here.
+                </span>`;
+
+        } else {
+
+            inTextPreview.innerHTML =
+                inText.html;
+
+        }
+
+    }
+
+
+    /* CHICAGO */
+
+    if (style === "chicago18") {
+
+        const firstFootnote =
+            formatChicagoFirstFootnote(
+                source,
+                page
+            );
+
+
+        const shortFootnote =
+            formatChicagoShortFootnote(
+                source,
+                page
+            );
+
+
+        if (!firstFootnote.plain) {
+
+            firstFootnotePreview.innerHTML =
+                `<span class="placeholder-text">
+                    Your first footnote will appear here.
+                </span>`;
+
+        } else {
+
+            firstFootnotePreview.innerHTML =
+                firstFootnote.html;
+
+        }
+
+
+        if (!shortFootnote.plain) {
+
+            shortFootnotePreview.innerHTML =
+                `<span class="placeholder-text">
+                    Your shortened footnote will appear here.
+                </span>`;
+
+        } else {
+
+            shortFootnotePreview.innerHTML =
+                shortFootnote.html;
+
+        }
+
+    }
+
+
+    /* VALIDATION */
 
     const missing =
-        validateBook(data);
+        validateBook(source);
+
+
+    if (
+        !source.title &&
+        !source.publisher &&
+        !source.year
+    ) {
+
+        validationMessage.textContent =
+            "";
+
+        return;
+
+    }
 
 
     if (missing.length > 0) {
@@ -332,7 +1334,8 @@ function updatePreview() {
 
     } else {
 
-        validationMessage.textContent = "";
+        validationMessage.textContent =
+            "";
 
     }
 
@@ -340,15 +1343,16 @@ function updatePreview() {
 
 
 /* =========================================================
-   ADD CITATION
+   ADD SOURCE
 ========================================================= */
 
-function addCitation() {
+function addSource() {
 
-    const data = getBookData();
+    const source =
+        getCurrentSource();
 
     const missing =
-        validateBook(data);
+        validateBook(source);
 
 
     if (missing.length > 0) {
@@ -361,38 +1365,22 @@ function addCitation() {
     }
 
 
-    const citation =
-        buildMLABookCitation(data);
+    source.id =
+        createSourceId();
 
 
-    const citationObject = {
+    savedSources.push(source);
 
-        id: Date.now(),
+    saveSources();
 
-        type: "book",
+    renderCollection();
 
-        style: "mla9",
-
-        sortKey:
-            data.authorLast ||
-            data.title,
-
-        html:
-            citation.html,
-
-        plain:
-            citation.plain
-
-    };
-
-
-    savedCitations.push(citationObject);
-
-    saveCitations();
-
-    renderWorksCited();
 
     citationForm.reset();
+
+    pageNumberInput.value =
+        "";
+
 
     updatePreview();
 
@@ -400,29 +1388,58 @@ function addCitation() {
 
 
 /* =========================================================
-   SAVE
+   CREATE ID
 ========================================================= */
 
-function saveCitations() {
+function createSourceId() {
 
-    localStorage.setItem(
-        "citationBuilderSources",
-        JSON.stringify(savedCitations)
+    if (
+        window.crypto &&
+        crypto.randomUUID
+    ) {
+
+        return crypto.randomUUID();
+
+    }
+
+
+    return (
+        Date.now().toString() +
+        Math.random()
+            .toString(16)
+            .slice(2)
     );
 
 }
 
 
 /* =========================================================
-   RENDER WORKS CITED
+   SORTING
 ========================================================= */
 
-function renderWorksCited() {
+function getSortKey(source) {
 
-    worksCitedList.innerHTML = "";
+    return (
+        source.author.last ||
+        source.author.first ||
+        source.title ||
+        ""
+    ).toLowerCase();
+
+}
 
 
-    if (savedCitations.length === 0) {
+/* =========================================================
+   RENDER COLLECTION
+========================================================= */
+
+function renderCollection() {
+
+    worksCitedList.innerHTML =
+        "";
+
+
+    if (savedSources.length === 0) {
 
         worksCitedList.innerHTML =
             `<p class="empty-message">
@@ -434,11 +1451,15 @@ function renderWorksCited() {
     }
 
 
+    const style =
+        citationStyleSelect.value;
+
+
     const sorted =
-        [...savedCitations].sort(
+        [...savedSources].sort(
             (a, b) =>
-                a.sortKey.localeCompare(
-                    b.sortKey,
+                getSortKey(a).localeCompare(
+                    getSortKey(b),
                     undefined,
                     {
                         sensitivity: "base"
@@ -447,10 +1468,18 @@ function renderWorksCited() {
         );
 
 
-    sorted.forEach(citation => {
+    sorted.forEach(source => {
+
+        const citation =
+            formatMainCitation(
+                source,
+                style
+            );
+
 
         const entry =
             document.createElement("div");
+
 
         entry.className =
             "works-cited-entry";
@@ -459,6 +1488,7 @@ function renderWorksCited() {
         const citationText =
             document.createElement("span");
 
+
         citationText.innerHTML =
             citation.html;
 
@@ -466,11 +1496,14 @@ function renderWorksCited() {
         const deleteButton =
             document.createElement("button");
 
+
         deleteButton.type =
             "button";
 
+
         deleteButton.className =
             "delete-citation";
+
 
         deleteButton.textContent =
             "Remove";
@@ -478,14 +1511,24 @@ function renderWorksCited() {
 
         deleteButton.addEventListener(
             "click",
-            () => deleteCitation(citation.id)
+            () =>
+                deleteSource(source.id)
         );
 
 
-        entry.appendChild(citationText);
-        entry.appendChild(deleteButton);
+        entry.appendChild(
+            citationText
+        );
 
-        worksCitedList.appendChild(entry);
+
+        entry.appendChild(
+            deleteButton
+        );
+
+
+        worksCitedList.appendChild(
+            entry
+        );
 
     });
 
@@ -493,41 +1536,49 @@ function renderWorksCited() {
 
 
 /* =========================================================
-   DELETE
+   DELETE SOURCE
 ========================================================= */
 
-function deleteCitation(id) {
+function deleteSource(id) {
 
-    savedCitations =
-        savedCitations.filter(
-            citation =>
-                citation.id !== id
+    savedSources =
+        savedSources.filter(
+            source =>
+                source.id !== id
         );
 
 
-    saveCitations();
+    saveSources();
 
-    renderWorksCited();
+    renderCollection();
 
 }
 
 
 /* =========================================================
-   CLEAR
+   CLEAR COLLECTION
 ========================================================= */
 
-function clearBibliography() {
+function clearCollection() {
 
-    if (savedCitations.length === 0) {
+    if (
+        savedSources.length === 0
+    ) {
 
         return;
 
     }
 
 
+    const collectionName =
+        STYLE_CONFIG[
+            citationStyleSelect.value
+        ].collectionName;
+
+
     const confirmed =
         window.confirm(
-            "Remove every source from your Works Cited list?"
+            `Remove every source from your ${collectionName}?`
         );
 
 
@@ -538,163 +1589,27 @@ function clearBibliography() {
     }
 
 
-    savedCitations = [];
+    savedSources = [];
 
-    saveCitations();
+    saveSources();
 
-    renderWorksCited();
-
-}
-
-
-/* =========================================================
-   COPY ONE CITATION
-========================================================= */
-
-async function copyCurrentCitation() {
-
-    const data =
-        getBookData();
-
-    const citation =
-        buildMLABookCitation(data);
-
-
-    if (!citation.plain) {
-
-        validationMessage.textContent =
-            "Enter source information before copying.";
-
-        return;
-
-    }
-
-
-    try {
-
-        await copyRichText(
-            citation.html,
-            citation.plain
-        );
-
-
-        showTemporaryButtonMessage(
-            copyCitationButton,
-            "Copied!"
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        validationMessage.textContent =
-            "Your browser could not copy the citation automatically.";
-
-    }
+    renderCollection();
 
 }
 
 
 /* =========================================================
-   COPY WORKS CITED
+   COPY HELPERS
 ========================================================= */
 
-async function copyWorksCited() {
+async function copyRichText(
+    html,
+    plain
+) {
 
-    if (savedCitations.length === 0) {
-
-        return;
-
+    if (!plain) {
+        return false;
     }
-
-
-    const sorted =
-        [...savedCitations].sort(
-            (a, b) =>
-                a.sortKey.localeCompare(
-                    b.sortKey,
-                    undefined,
-                    {
-                        sensitivity: "base"
-                    }
-                )
-        );
-
-
-    const htmlEntries =
-        sorted
-            .map(
-                citation =>
-                    `<div style="
-                        margin-bottom: 1em;
-                        padding-left: 2em;
-                        text-indent: -2em;
-                    ">
-                        ${citation.html}
-                    </div>`
-            )
-            .join("");
-
-
-    const fullHTML =
-        `<div>
-            <div style="
-                text-align: center;
-                margin-bottom: 2em;
-            ">
-                Works Cited
-            </div>
-
-            ${htmlEntries}
-        </div>`;
-
-
-    const plainText =
-        "Works Cited\n\n" +
-        sorted
-            .map(
-                citation =>
-                    citation.plain
-            )
-            .join("\n\n");
-
-
-    try {
-
-        await copyRichText(
-            fullHTML,
-            plainText
-        );
-
-
-        showTemporaryButtonMessage(
-            copyBibliographyButton,
-            "Copied!"
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-    }
-
-}
-
-
-/* =========================================================
-   RICH TEXT CLIPBOARD
-========================================================= */
-
-async function copyRichText(html, plain) {
-
-    /*
-        Modern browsers can copy both HTML and plain text.
-
-        Google Docs and Word should use the HTML version,
-        which preserves italics and other formatting.
-
-        Plain text remains available as a fallback.
-    */
 
 
     if (
@@ -722,8 +1637,13 @@ async function copyRichText(html, plain) {
 
         const item =
             new ClipboardItem({
-                "text/html": htmlBlob,
-                "text/plain": textBlob
+
+                "text/html":
+                    htmlBlob,
+
+                "text/plain":
+                    textBlob
+
             });
 
 
@@ -732,18 +1652,288 @@ async function copyRichText(html, plain) {
         );
 
 
+        return true;
+
+    }
+
+
+    if (navigator.clipboard) {
+
+        await navigator.clipboard.writeText(
+            plain
+        );
+
+
+        return true;
+
+    }
+
+
+    return false;
+
+}
+
+
+/* =========================================================
+   COPY MAIN CITATION
+========================================================= */
+
+async function copyMainCitation() {
+
+    const source =
+        getCurrentSource();
+
+    const style =
+        citationStyleSelect.value;
+
+
+    const citation =
+        formatMainCitation(
+            source,
+            style
+        );
+
+
+    if (!citation.plain) {
+
+        validationMessage.textContent =
+            "Enter source information before copying.";
+
         return;
 
     }
 
 
-    /*
-        Fallback for browsers without
-        rich clipboard support.
-    */
+    try {
 
-    await navigator.clipboard.writeText(
-        plain
+        await copyRichText(
+            citation.html,
+            citation.plain
+        );
+
+
+        showTemporaryButtonMessage(
+            copyMainCitationButton,
+            "Copied!"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+/* =========================================================
+   COPY MLA IN-TEXT
+========================================================= */
+
+async function copyMLAInText() {
+
+    const source =
+        getCurrentSource();
+
+    const page =
+        clean(pageNumberInput.value);
+
+
+    const citation =
+        formatMLAInText(
+            source,
+            page
+        );
+
+
+    if (!citation.plain) {
+        return;
+    }
+
+
+    await copyRichText(
+        citation.html,
+        citation.plain
+    );
+
+
+    showTemporaryButtonMessage(
+        copyInTextButton,
+        "Copied!"
+    );
+
+}
+
+
+/* =========================================================
+   COPY CHICAGO FOOTNOTES
+========================================================= */
+
+async function copyFirstFootnote() {
+
+    const source =
+        getCurrentSource();
+
+    const page =
+        clean(pageNumberInput.value);
+
+
+    const citation =
+        formatChicagoFirstFootnote(
+            source,
+            page
+        );
+
+
+    if (!citation.plain) {
+        return;
+    }
+
+
+    await copyRichText(
+        citation.html,
+        citation.plain
+    );
+
+
+    showTemporaryButtonMessage(
+        copyFirstFootnoteButton,
+        "Copied!"
+    );
+
+}
+
+
+async function copyShortFootnote() {
+
+    const source =
+        getCurrentSource();
+
+    const page =
+        clean(pageNumberInput.value);
+
+
+    const citation =
+        formatChicagoShortFootnote(
+            source,
+            page
+        );
+
+
+    if (!citation.plain) {
+        return;
+    }
+
+
+    await copyRichText(
+        citation.html,
+        citation.plain
+    );
+
+
+    showTemporaryButtonMessage(
+        copyShortFootnoteButton,
+        "Copied!"
+    );
+
+}
+
+
+/* =========================================================
+   COPY COLLECTION
+========================================================= */
+
+async function copyCollection() {
+
+    if (
+        savedSources.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const style =
+        citationStyleSelect.value;
+
+
+    const config =
+        STYLE_CONFIG[style];
+
+
+    const sorted =
+        [...savedSources].sort(
+            (a, b) =>
+                getSortKey(a).localeCompare(
+                    getSortKey(b),
+                    undefined,
+                    {
+                        sensitivity: "base"
+                    }
+                )
+        );
+
+
+    const formatted =
+        sorted.map(
+            source =>
+                formatMainCitation(
+                    source,
+                    style
+                )
+        );
+
+
+    const htmlEntries =
+        formatted
+            .map(
+                citation =>
+                    `<div style="
+                        margin-bottom: 1em;
+                        padding-left: 2em;
+                        text-indent: -2em;
+                    ">
+                        ${citation.html}
+                    </div>`
+            )
+            .join("");
+
+
+    const fullHTML =
+        `<div>
+            <div style="
+                text-align: center;
+                margin-bottom: 2em;
+            ">
+                ${escapeHTML(
+                    config.collectionName
+                )}
+            </div>
+
+            ${htmlEntries}
+        </div>`;
+
+
+    const plainText =
+        `${config.collectionName}\n\n` +
+        formatted
+            .map(
+                citation =>
+                    citation.plain
+            )
+            .join("\n\n");
+
+
+    await copyRichText(
+        fullHTML,
+        plainText
+    );
+
+
+    showTemporaryButtonMessage(
+        copyCollectionButton,
+        "Copied!"
     );
 
 }
@@ -789,27 +1979,63 @@ citationForm.addEventListener(
 );
 
 
+pageNumberInput.addEventListener(
+    "input",
+    updatePreview
+);
+
+
+citationStyleSelect.addEventListener(
+    "change",
+    updateStyleInterface
+);
+
+
+sourceTypeSelect.addEventListener(
+    "change",
+    updatePreview
+);
+
+
 addCitationButton.addEventListener(
     "click",
-    addCitation
+    addSource
 );
 
 
-copyCitationButton.addEventListener(
+copyMainCitationButton.addEventListener(
     "click",
-    copyCurrentCitation
+    copyMainCitation
 );
 
 
-copyBibliographyButton.addEventListener(
+copyInTextButton.addEventListener(
     "click",
-    copyWorksCited
+    copyMLAInText
+);
+
+
+copyFirstFootnoteButton.addEventListener(
+    "click",
+    copyFirstFootnote
+);
+
+
+copyShortFootnoteButton.addEventListener(
+    "click",
+    copyShortFootnote
+);
+
+
+copyCollectionButton.addEventListener(
+    "click",
+    copyCollection
 );
 
 
 clearBibliographyButton.addEventListener(
     "click",
-    clearBibliography
+    clearCollection
 );
 
 
@@ -817,6 +2043,4 @@ clearBibliographyButton.addEventListener(
    INITIALIZE
 ========================================================= */
 
-updatePreview();
-
-renderWorksCited();
+updateStyleInterface();
