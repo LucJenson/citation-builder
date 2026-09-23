@@ -54,6 +54,7 @@
 
                 <select id="citationStyle">
                     <option value="mla9">MLA 9</option>
+
                     <option value="chicago18">
                         Chicago 18 — Notes &amp; Bibliography
                     </option>
@@ -86,17 +87,29 @@
          STEP 2 — SOURCE INFORMATION
     ====================================================== -->
 
-    <section class="card">
+    <section class="card" id="sourceInformationSection">
 
         <div class="section-heading">
             <div class="step-number">2</div>
 
             <div>
-                <h2>Find the Source Information</h2>
-                <p>
+                <h2 id="sourceInformationHeading">
+                    Find the Source Information
+                </h2>
+
+                <p id="sourceInformationDescription">
                     Enter the information you can find in your source.
                 </p>
             </div>
+        </div>
+
+
+        <!-- EDITING STATUS -->
+
+        <div id="editingNotice" class="editing-notice" hidden>
+            <strong>Editing saved source</strong>
+
+            <span id="editingNoticeText"></span>
         </div>
 
 
@@ -327,7 +340,7 @@
          STEP 3 — CITATION OUTPUTS
     ====================================================== -->
 
-    <section class="card preview-card">
+    <section class="card preview-card" id="citationOutputSection">
 
         <div class="section-heading">
 
@@ -341,6 +354,25 @@
                 </p>
             </div>
 
+        </div>
+
+
+        <!-- CITING STATUS -->
+
+        <div id="citingNotice" class="citing-notice" hidden>
+            <div>
+                <strong>Citing saved source</strong>
+
+                <span id="citingNoticeText"></span>
+            </div>
+
+            <button
+                type="button"
+                id="stopCitingButton"
+                class="small-button"
+            >
+                Stop Citing
+            </button>
         </div>
 
 
@@ -414,7 +446,7 @@
         </div>
 
 
-        <!-- MLA IN-TEXT OUTPUT -->
+        <!-- MLA OUTPUT -->
 
         <div id="mlaOutputs">
 
@@ -459,7 +491,7 @@
         </div>
 
 
-        <!-- CHICAGO FOOTNOTE OUTPUTS -->
+        <!-- CHICAGO OUTPUTS -->
 
         <div id="chicagoOutputs" hidden>
 
@@ -560,13 +592,23 @@
                 Add to My Works Cited
             </button>
 
+
+            <button
+                type="button"
+                id="cancelEditButton"
+                class="secondary-button"
+                hidden
+            >
+                Cancel Edit
+            </button>
+
         </div>
 
     </section>
 
 
     <!-- =====================================================
-         STEP 4 — SOURCE COLLECTION
+         STEP 4 — COLLECTION
     ====================================================== -->
 
     <section class="card">
@@ -578,8 +620,9 @@
             <div>
                 <h2 id="collectionHeading">My Works Cited</h2>
 
-                <p id="collectionDescription">
+                <p>
                     Sources are saved in this browser and sorted alphabetically.
+                    Use Cite when you need to reference a saved source again.
                 </p>
             </div>
 
