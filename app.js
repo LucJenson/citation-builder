@@ -678,6 +678,193 @@ function formatMLABook(source) {
 
 }
 
+/* =========================================================
+   CITATION CONTEXT
+========================================================= */
+
+/*
+    A citation sometimes depends on the student's entire
+    source collection rather than only the source being cited.
+
+    Example:
+
+    One Orwell source:
+        (Orwell 42)
+
+    Multiple Orwell sources:
+        (Orwell, 1984 42)
+        (Orwell, Animal Farm 17)
+
+    Future contextual rules can be added here without
+    changing every individual formatter.
+*/
+
+
+function normalizeForComparison(value) {
+
+    return clean(value)
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim();
+
+}
+
+
+function getAuthorKey(source) {
+
+    /*
+        For now, books have individual authors.
+
+        Later, this function can be expanded to support:
+        - multiple authors
+        - organizations
+        - editors used as primary contributors
+        - other creator types
+    */
+
+    const last =
+        normalizeForComparison(
+            source.author?.last
+        );
+
+
+    const first =
+        normalizeForComparison(
+            source.author?.first
+        );
+
+
+    if (!last && !first) {
+        return "";
+    }
+
+
+    /*
+        Last name is currently the important identifier
+        because that is what appears in the parenthetical
+        citation.
+
+        Including first name prevents two unrelated authors
+        with the same surname from being treated as the same
+        person at this stage.
+    */
+
+    return `${last}|${first}`;
+
+}
+
+
+function getCitationContext(
+    source,
+    allSources
+) {
+
+    const authorKey =
+        getAuthorKey(source);
+
+
+    let sameAuthorSources = [];
+
+
+    if (authorKey) {
+
+        sameAuthorSources =
+            allSources.filter(
+                otherSource =>
+                    getAuthorKey(otherSource) ===
+                    authorKey
+            );
+
+    }
+
+
+    const titleKey =
+        normalizeForComparison(
+            getFullTitle(source)
+        );
+
+
+    const sameAuthorSameTitleSources =
+        sameAuthorSources.filter(
+            otherSource =>
+                normalizeForComparison(
+                    getFullTitle(otherSource)
+                ) === titleKey
+        );
+
+
+    return {
+
+        sameAuthorSources,
+
+        sameAuthorSameTitleSources,
+
+        authorHasMultipleWorks:
+            sameAuthorSources.length > 1,
+
+        authorHasDuplicateTitle:
+            sameAuthorSameTitleSources.length > 1,
+
+        authorMissing:
+            !authorKey
+
+    };
+
+}
+
+
+/* =========================================================
+   SHORT TITLES
+========================================================= */
+
+function removeInitialArticle(title) {
+
+    return clean(title)
+        .replace(
+            /^(a|an|the)\s+/i,
+            ""
+        );
+
+}
+
+
+function getShortTitle(source) {
+
+    /*
+        For short titles, preserving the recognizable
+        beginning of the work is more useful than applying
+        an arbitrary word-count cutoff.
+
+        Most ordinary book titles in our students' projects
+        are already short:
+
+            1984
+            Animal Farm
+            The Hobbit
+            The Great Gatsby
+
+        Initial articles can be omitted when the title must
+        function as a shortened identifying title.
+
+        We will expand this function later for:
+        - article titles
+        - very long titles
+        - quotation-mark titles
+        - webpages
+        - chapters
+    */
+
+    const title =
+        removeInitialArticle(
+            source.title
+        );
+
+
+    return title ||
+        source.title ||
+        "";
+
+}
 
 /* =========================================================
    MLA — IN-TEXT
@@ -685,31 +872,95 @@ function formatMLABook(source) {
 
 function formatMLAInText(
     source,
-    page
+    page,
+    allSources = []
 ) {
 
-    let identifier = "";
+    const context =
+        getCitationContext(
+            source,
+            allSources
+        );
 
 
-    if (source.author.last) {
+    let plain = "";
+    let html = "";
 
-        identifier =
-            source.author.last;
 
-    } else if (source.author.first) {
+    /* =====================================================
+       SOURCE HAS AN AUTHOR
+    ====================================================== */
 
-        identifier =
+    if (
+        source.author?.last ||
+        source.author?.first
+    ) {
+
+        const author =
+            source.author.last ||
             source.author.first;
 
-    } else if (source.title) {
 
-        identifier =
-            source.title;
+        plain =
+            author;
+
+        html =
+            escapeHTML(author);
+
+
+        /*
+            If this author has more than one work in the
+            student's collection, identify which work is
+            being cited by adding its title.
+        */
+
+        if (
+            context.authorHasMultipleWorks &&
+            source.title
+        ) {
+
+            const shortTitle =
+                getShortTitle(source);
+
+
+            plain +=
+                `, ${shortTitle}`;
+
+
+            /*
+                Books are independent works, so their titles
+                remain italicized inside the citation.
+            */
+
+            html +=
+                `, <em>${escapeHTML(shortTitle)}</em>`;
+
+        }
 
     }
 
 
-    if (!identifier) {
+    /* =====================================================
+       SOURCE HAS NO AUTHOR
+    ====================================================== */
+
+    else if (source.title) {
+
+        const shortTitle =
+            getShortTitle(source);
+
+
+        plain =
+            shortTitle;
+
+
+        html =
+            `<em>${escapeHTML(shortTitle)}</em>`;
+
+    }
+
+
+    else {
 
         return {
             html: "",
@@ -719,28 +970,36 @@ function formatMLAInText(
     }
 
 
-    let plain =
-        identifier;
-
+    /* =====================================================
+       LOCATION
+    ====================================================== */
 
     if (page) {
 
-        plain += ` ${page}`;
+        plain +=
+            ` ${page}`;
+
+        html +=
+            ` ${escapeHTML(page)}`;
 
     }
 
+
+    /* =====================================================
+       PARENTHESES
+    ====================================================== */
 
     plain =
         `(${plain})`;
 
 
+    html =
+        `(${html})`;
+
+
     return {
-
-        html:
-            escapeHTML(plain),
-
+        html,
         plain
-
     };
 
 }
@@ -1307,11 +1566,12 @@ function updatePreview() {
 
     if (style === "mla9") {
 
-        const inText =
-            formatMLAInText(
-                source,
-                page
-            );
+      const inText =
+          formatMLAInText(
+              source,
+              page,
+              savedSources
+          );
 
 
         if (!inText.plain) {
@@ -2283,11 +2543,12 @@ async function copyMLAInText() {
         clean(pageNumberInput.value);
 
 
-    const citation =
-        formatMLAInText(
-            source,
-            page
-        );
+   const citation =
+       formatMLAInText(
+           source,
+           page,
+           savedSources
+       );
 
 
     if (!citation.plain) {
