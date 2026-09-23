@@ -113,224 +113,28 @@
         </div>
 
 
-        <div class="instruction-box">
-            <strong>Using a book?</strong>
-            You can usually find most citation information on the
-            title page and copyright page near the beginning of the book.
+        <div
+            id="sourceInstructionBox"
+            class="instruction-box"
+        >
         </div>
 
 
         <form id="citationForm" autocomplete="off">
 
-            <!-- AUTHOR -->
-
-            <fieldset>
-
-                <legend>Author</legend>
-
-                <p class="field-explanation">
-                    Who wrote the book?
-                </p>
-
-
-                <div class="two-column">
-
-                    <div class="form-group">
-
-                        <label for="authorFirst">
-                            First Name
-                            <span class="optional-label">If available</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="authorFirst"
-                            placeholder="George"
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="authorLast">
-                            Last Name
-                            <span class="optional-label">If available</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="authorLast"
-                            placeholder="Orwell"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <p class="help-text">
-                    If the book does not identify an author, leave these
-                    fields blank. The citation can begin with the title.
-                </p>
-
-            </fieldset>
-
-
-            <!-- TITLE -->
-
-            <fieldset>
-
-                <legend>Book Title</legend>
-
-                <p class="field-explanation">
-                    What is the complete title of the book?
-                </p>
-
-
-                <div class="form-group">
-
-                    <label for="bookTitle">
-                        Title
-                        <span class="required-label">Required</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        id="bookTitle"
-                        placeholder="1984"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="bookSubtitle">
-                        Subtitle
-                        <span class="optional-label">If available</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        id="bookSubtitle"
-                        placeholder="Leave blank if there is no subtitle"
-                    >
-
-                </div>
-
-            </fieldset>
-
-
-            <!-- PUBLICATION -->
-
-            <fieldset>
-
-                <legend>Publication</legend>
-
-                <p class="field-explanation">
-                    Who published the book, and when was this edition published?
-                </p>
-
-
-                <div class="two-column">
-
-                    <div class="form-group">
-
-                        <label for="publisher">
-                            Publisher
-                            <span class="required-label">Required</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="publisher"
-                            placeholder="Penguin Books"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="publicationYear">
-                            Publication Year
-                            <span class="required-label">Required</span>
-                        </label>
-
-                        <input
-                            type="number"
-                            id="publicationYear"
-                            placeholder="2021"
-                            min="1000"
-                            max="2100"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <p class="help-text">
-                    Use the publication year for the edition you are actually
-                    using, not necessarily the year the book was first published.
-                </p>
-
-            </fieldset>
-
-
-            <!-- OTHER INFORMATION -->
-
-            <fieldset>
-
-                <legend>Other Information</legend>
-
-                <p class="field-explanation">
-                    Some books include additional information that belongs
-                    in the citation.
-                </p>
-
-
-                <div class="two-column">
-
-                    <div class="form-group">
-
-                        <label for="edition">
-                            Edition
-                            <span class="optional-label">If available</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="edition"
-                            placeholder="2nd"
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="translator">
-                            Translator
-                            <span class="optional-label">If available</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="translator"
-                            placeholder="Gregory Rabassa"
-                        >
-
-                    </div>
-
-                </div>
-
-            </fieldset>
-
+            <div id="sourceFields">
+                <!--
+                    Source-specific fields are generated by JavaScript.
+        
+                    This allows each source type to define its own:
+                    - fields
+                    - explanations
+                    - required information
+                    - placeholders
+                    - grouping
+                -->
+            </div>
+        
         </form>
 
     </section>
