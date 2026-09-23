@@ -2317,6 +2317,94 @@ function updateStyleInterface() {
 
 }
 
+/* =========================================================
+   EFFECTIVE CITATION COLLECTION
+========================================================= */
+
+/*
+    Citation context must include the source currently being
+    created or edited, even before it has been saved.
+
+    Example:
+
+    Saved:
+        Orwell — 1984
+
+    Currently entering:
+        Orwell — Animal Farm
+
+    The preview must already understand that there are now
+    two Orwell works and produce:
+
+        (Orwell, Animal Farm 17)
+
+    rather than:
+
+        (Orwell 17)
+*/
+
+function getEffectiveCitationCollection(source) {
+
+    /*
+        Cite mode uses an existing saved source.
+
+        It is already represented in savedSources, so adding
+        it again would incorrectly create a duplicate.
+    */
+
+    if (citedSource) {
+
+        return savedSources;
+
+    }
+
+
+    /*
+        Edit mode also represents an existing saved source.
+
+        Replace the stored version with the currently edited
+        version so context reflects the student's changes
+        without counting the source twice.
+    */
+
+    if (editingSourceId) {
+
+        return savedSources.map(
+            savedSource => {
+
+                if (
+                    savedSource.id ===
+                    editingSourceId
+                ) {
+
+                    return source;
+
+                }
+
+
+                return savedSource;
+
+            }
+        );
+
+    }
+
+
+    /*
+        A new unsaved source does not yet exist in
+        savedSources.
+
+        Add it temporarily for citation-context calculations.
+        This does NOT save it to localStorage or the student's
+        Works Cited / Bibliography.
+    */
+
+    return [
+        ...savedSources,
+        source
+    ];
+
+}
 
 /* =========================================================
    LIVE PREVIEW
@@ -2366,12 +2454,18 @@ function updatePreview() {
 
     if (style === "mla9") {
 
-        const inText =
-            formatMLAInText(
-                source,
-                page,
-                savedSources
-            );
+        const citationCollection =
+             getEffectiveCitationCollection(
+                 source
+             );
+         
+         
+         const inText =
+             formatMLAInText(
+                 source,
+                 page,
+                 citationCollection
+             );
 
 
         if (!inText.plain) {
@@ -3383,12 +3477,18 @@ async function copyMLAInText() {
         );
 
 
-    const citation =
-        formatMLAInText(
-            source,
-            page,
-            savedSources
-        );
+      const citationCollection =
+          getEffectiveCitationCollection(
+              source
+          );
+      
+      
+      const citation =
+          formatMLAInText(
+              source,
+              page,
+              citationCollection
+          );
 
 
     if (!citation.plain) {
