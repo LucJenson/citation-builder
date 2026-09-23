@@ -13,13 +13,13 @@
 
 <header class="site-header">
     <div class="header-content">
-        <div>
-            <p class="eyebrow">Student Research Tool</p>
-            <h1>Citation Builder</h1>
-            <p class="subtitle">
-                Learn what information belongs in a citation while you build it.
-            </p>
-        </div>
+        <p class="eyebrow">Student Research Tool</p>
+
+        <h1>Citation Builder</h1>
+
+        <p class="subtitle">
+            Learn what information belongs in a citation while you build it.
+        </p>
     </div>
 </header>
 
@@ -27,7 +27,7 @@
 <main class="page-container">
 
     <!-- =====================================================
-         CITATION SETTINGS
+         STEP 1 — SETTINGS
     ====================================================== -->
 
     <section class="card">
@@ -47,20 +47,23 @@
         <div class="settings-grid">
 
             <div class="form-group">
+
                 <label for="citationStyle">
                     Citation Style
                 </label>
 
                 <select id="citationStyle">
                     <option value="mla9">MLA 9</option>
-                    <option value="chicago" disabled>
-                        Chicago — Coming Soon
+                    <option value="chicago18">
+                        Chicago 18 — Notes &amp; Bibliography
                     </option>
                 </select>
+
             </div>
 
 
             <div class="form-group">
+
                 <label for="sourceType">
                     Source Type
                 </label>
@@ -68,15 +71,19 @@
                 <select id="sourceType">
                     <option value="book">Book</option>
                 </select>
+
             </div>
 
         </div>
+
+
+        <div id="styleExplanation" class="style-explanation"></div>
 
     </section>
 
 
     <!-- =====================================================
-         SOURCE INFORMATION
+         STEP 2 — SOURCE INFORMATION
     ====================================================== -->
 
     <section class="card">
@@ -151,7 +158,7 @@
 
                 <p class="help-text">
                     If the book does not identify an author, leave these
-                    fields blank. Your citation can begin with the title.
+                    fields blank. The citation can begin with the title.
                 </p>
 
             </fieldset>
@@ -203,7 +210,7 @@
             </fieldset>
 
 
-            <!-- PUBLISHER -->
+            <!-- PUBLICATION -->
 
             <fieldset>
 
@@ -262,7 +269,7 @@
             </fieldset>
 
 
-            <!-- OPTIONAL CONTRIBUTORS -->
+            <!-- OTHER INFORMATION -->
 
             <fieldset>
 
@@ -317,7 +324,7 @@
 
 
     <!-- =====================================================
-         CITATION PREVIEW
+         STEP 3 — CITATION OUTPUTS
     ====================================================== -->
 
     <section class="card preview-card">
@@ -327,18 +334,44 @@
             <div class="step-number">3</div>
 
             <div>
-                <h2>Check Your Citation</h2>
+                <h2>Check Your Citations</h2>
+
                 <p>
-                    Your citation updates automatically as you enter information.
+                    See how this source should appear in your paper.
                 </p>
             </div>
 
         </div>
 
 
-        <div class="citation-preview-container">
+        <!-- MAIN BIBLIOGRAPHIC OUTPUT -->
 
-            <p class="preview-label">MLA 9 — Works Cited</p>
+        <div class="output-block">
+
+            <div class="output-heading">
+
+                <div>
+                    <p id="mainOutputLabel" class="preview-label">
+                        MLA 9 — Works Cited Entry
+                    </p>
+
+                    <p id="mainOutputHelp" class="output-help">
+                        This is the full citation that appears on your
+                        Works Cited page.
+                    </p>
+                </div>
+
+
+                <button
+                    type="button"
+                    id="copyMainCitationButton"
+                    class="small-button"
+                >
+                    Copy
+                </button>
+
+            </div>
+
 
             <div
                 id="citationPreview"
@@ -348,6 +381,163 @@
                 <span class="placeholder-text">
                     Your citation will appear here.
                 </span>
+            </div>
+
+        </div>
+
+
+        <!-- PAGE NUMBER -->
+
+        <div class="page-number-panel">
+
+            <div class="form-group">
+
+                <label for="pageNumber">
+                    Page Number
+                    <span class="optional-label">When needed</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="pageNumber"
+                    placeholder="42"
+                >
+
+            </div>
+
+
+            <p id="pageNumberHelp" class="help-text page-help">
+                Enter the page containing the information you used.
+                Note: This is not included on the Works Cited.
+            </p>
+
+        </div>
+
+
+        <!-- MLA IN-TEXT OUTPUT -->
+
+        <div id="mlaOutputs">
+
+            <div class="output-block secondary-output">
+
+                <div class="output-heading">
+
+                    <div>
+                        <p class="preview-label">
+                            MLA 9 — In-Text Citation
+                        </p>
+
+                        <p class="output-help">
+                            Use this in your writing when referring to,
+                            paraphrasing, or quoting information from this source.
+                        </p>
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="copyInTextButton"
+                        class="small-button"
+                    >
+                        Copy
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="inTextPreview"
+                    class="inline-citation-preview"
+                >
+                    <span class="placeholder-text">
+                        Your in-text citation will appear here.
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CHICAGO FOOTNOTE OUTPUTS -->
+
+        <div id="chicagoOutputs" hidden>
+
+            <div class="output-block secondary-output">
+
+                <div class="output-heading">
+
+                    <div>
+                        <p class="preview-label">
+                            Chicago 18 — First Footnote
+                        </p>
+
+                        <p class="output-help">
+                            Use the full note the first time you cite
+                            this source in your paper.
+                        </p>
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="copyFirstFootnoteButton"
+                        class="small-button"
+                    >
+                        Copy
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="firstFootnotePreview"
+                    class="inline-citation-preview"
+                >
+                    <span class="placeholder-text">
+                        Your first footnote will appear here.
+                    </span>
+                </div>
+
+            </div>
+
+
+            <div class="output-block secondary-output">
+
+                <div class="output-heading">
+
+                    <div>
+                        <p class="preview-label">
+                            Chicago 18 — Shortened Footnote
+                        </p>
+
+                        <p class="output-help">
+                            Use the shortened form when citing the same
+                            source again later.
+                        </p>
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="copyShortFootnoteButton"
+                        class="small-button"
+                    >
+                        Copy
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="shortFootnotePreview"
+                    class="inline-citation-preview"
+                >
+                    <span class="placeholder-text">
+                        Your shortened footnote will appear here.
+                    </span>
+                </div>
+
             </div>
 
         </div>
@@ -364,15 +554,6 @@
 
             <button
                 type="button"
-                id="copyCitationButton"
-                class="secondary-button"
-            >
-                Copy Citation
-            </button>
-
-
-            <button
-                type="button"
                 id="addCitationButton"
                 class="primary-button"
             >
@@ -385,7 +566,7 @@
 
 
     <!-- =====================================================
-         WORKS CITED
+         STEP 4 — SOURCE COLLECTION
     ====================================================== -->
 
     <section class="card">
@@ -395,8 +576,9 @@
             <div class="step-number">4</div>
 
             <div>
-                <h2>My Works Cited</h2>
-                <p>
+                <h2 id="collectionHeading">My Works Cited</h2>
+
+                <p id="collectionDescription">
                     Sources are saved in this browser and sorted alphabetically.
                 </p>
             </div>
@@ -406,7 +588,9 @@
 
         <div class="works-cited-paper">
 
-            <h3>Works Cited</h3>
+            <h3 id="paperHeading">
+                Works Cited
+            </h3>
 
             <div id="worksCitedList">
 
@@ -423,7 +607,7 @@
 
             <button
                 type="button"
-                id="copyBibliographyButton"
+                id="copyCollectionButton"
                 class="secondary-button"
             >
                 Copy Works Cited
