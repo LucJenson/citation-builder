@@ -1,6 +1,6 @@
 /* =========================================================
    CITATION BUILDER
-   Version 0.2
+   Version 0.3
 
    Current support:
    - MLA 9
@@ -12,8 +12,11 @@
        - First footnote
        - Shortened footnote
 
-   Saved sources contain RAW SOURCE DATA.
-   Formatting is generated dynamically from that data.
+   Features:
+   - Raw source storage
+   - Style switching
+   - Edit saved sources
+   - Cite saved sources
 ========================================================= */
 
 
@@ -29,6 +32,13 @@ const sourceTypeSelect =
 
 const citationForm =
     document.getElementById("citationForm");
+
+
+const sourceInformationSection =
+    document.getElementById("sourceInformationSection");
+
+const citationOutputSection =
+    document.getElementById("citationOutputSection");
 
 
 const authorFirstInput =
@@ -99,6 +109,9 @@ const validationMessage =
 const addCitationButton =
     document.getElementById("addCitationButton");
 
+const cancelEditButton =
+    document.getElementById("cancelEditButton");
+
 const copyMainCitationButton =
     document.getElementById("copyMainCitationButton");
 
@@ -121,14 +134,27 @@ const clearBibliographyButton =
 const collectionHeading =
     document.getElementById("collectionHeading");
 
-const collectionDescription =
-    document.getElementById("collectionDescription");
-
 const paperHeading =
     document.getElementById("paperHeading");
 
 const worksCitedList =
     document.getElementById("worksCitedList");
+
+
+const editingNotice =
+    document.getElementById("editingNotice");
+
+const editingNoticeText =
+    document.getElementById("editingNoticeText");
+
+const citingNotice =
+    document.getElementById("citingNotice");
+
+const citingNoticeText =
+    document.getElementById("citingNoticeText");
+
+const stopCitingButton =
+    document.getElementById("stopCitingButton");
 
 
 /* =========================================================
@@ -143,6 +169,20 @@ let savedSources =
     loadSources();
 
 
+let editingSourceId =
+    null;
+
+
+/*
+    citedSource is deliberately separate from editing.
+
+    When it contains a source, Step 3 uses this source instead
+    of whatever happens to be in the Step 2 form.
+*/
+let citedSource =
+    null;
+
+
 /* =========================================================
    STYLE CONFIGURATION
 ========================================================= */
@@ -153,9 +193,8 @@ const STYLE_CONFIG = {
 
         name: "MLA 9",
 
-        collectionName: "Works Cited",
-
-        collectionPossessive: "Works Cited",
+        collectionName:
+            "Works Cited",
 
         mainLabel:
             "MLA 9 — Works Cited Entry",
@@ -178,9 +217,6 @@ const STYLE_CONFIG = {
             "Chicago 18 — Notes & Bibliography",
 
         collectionName:
-            "Bibliography",
-
-        collectionPossessive:
             "Bibliography",
 
         mainLabel:
@@ -229,6 +265,7 @@ function ensurePeriod(value) {
     const cleaned =
         clean(value);
 
+
     if (!cleaned) {
         return "";
     }
@@ -244,10 +281,23 @@ function ensurePeriod(value) {
 }
 
 
-function stripFinalPunctuation(value) {
+function ensureHTMLPeriod(html) {
 
-    return clean(value)
-        .replace(/[.,;:!?]+$/, "");
+    const cleaned =
+        clean(html);
+
+
+    if (!cleaned) {
+        return "";
+    }
+
+
+    if (/[.!?]$/.test(cleaned)) {
+        return cleaned;
+    }
+
+
+    return cleaned + ".";
 
 }
 
@@ -269,6 +319,7 @@ function normalizeEdition(value) {
     const edition =
         clean(value);
 
+
     if (!edition) {
         return "";
     }
@@ -286,24 +337,49 @@ function normalizeEdition(value) {
 }
 
 
+function createSourceId() {
+
+    if (
+        window.crypto &&
+        crypto.randomUUID
+    ) {
+
+        return crypto.randomUUID();
+
+    }
+
+
+    return (
+        Date.now().toString() +
+        Math.random()
+            .toString(16)
+            .slice(2)
+    );
+
+}
+
+
+function scrollToElement(element) {
+
+    element.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+}
+
+
 /* =========================================================
-   LOAD / SAVE
+   STORAGE
 ========================================================= */
 
 function loadSources() {
-
-    /*
-        V2 stores raw bibliographic information.
-
-        We intentionally do NOT migrate old formatted
-        citation strings because they do not contain
-        reliable structured source data.
-    */
 
     try {
 
         const stored =
             localStorage.getItem(STORAGE_KEY);
+
 
         if (!stored) {
             return [];
@@ -312,6 +388,7 @@ function loadSources() {
 
         const parsed =
             JSON.parse(stored);
+
 
         return Array.isArray(parsed)
             ? parsed
@@ -323,6 +400,7 @@ function loadSources() {
             "Could not load saved sources:",
             error
         );
+
 
         return [];
 
@@ -342,24 +420,26 @@ function saveSources() {
 
 
 /* =========================================================
-   READ CURRENT FORM
+   FORM DATA
 ========================================================= */
 
 function getCurrentSource() {
 
     return {
 
-        id: null,
+        id: editingSourceId,
 
         type:
             sourceTypeSelect.value,
 
         author: {
+
             first:
                 clean(authorFirstInput.value),
 
             last:
                 clean(authorLastInput.value)
+
         },
 
         title:
@@ -381,6 +461,39 @@ function getCurrentSource() {
             clean(translatorInput.value)
 
     };
+
+}
+
+
+function populateForm(source) {
+
+    sourceTypeSelect.value =
+        source.type || "book";
+
+
+    authorFirstInput.value =
+        source.author?.first || "";
+
+    authorLastInput.value =
+        source.author?.last || "";
+
+    bookTitleInput.value =
+        source.title || "";
+
+    bookSubtitleInput.value =
+        source.subtitle || "";
+
+    publisherInput.value =
+        source.publisher || "";
+
+    publicationYearInput.value =
+        source.year || "";
+
+    editionInput.value =
+        source.edition || "";
+
+    translatorInput.value =
+        source.translator || "";
 
 }
 
@@ -415,7 +528,7 @@ function validateBook(source) {
 
 
 /* =========================================================
-   MLA 9 — BOOK
+   MLA — BOOK
 ========================================================= */
 
 function formatMLABook(source) {
@@ -423,8 +536,6 @@ function formatMLABook(source) {
     const htmlParts = [];
     const plainParts = [];
 
-
-    /* AUTHOR */
 
     if (
         source.author.last ||
@@ -464,8 +575,6 @@ function formatMLABook(source) {
     }
 
 
-    /* TITLE */
-
     if (source.title) {
 
         const title =
@@ -483,8 +592,6 @@ function formatMLABook(source) {
     }
 
 
-    /* TRANSLATOR */
-
     if (source.translator) {
 
         const translator =
@@ -500,8 +607,6 @@ function formatMLABook(source) {
     }
 
 
-    /* EDITION */
-
     if (source.edition) {
 
         const edition =
@@ -516,8 +621,6 @@ function formatMLABook(source) {
 
     }
 
-
-    /* PUBLISHER + YEAR */
 
     let publication = "";
 
@@ -577,7 +680,7 @@ function formatMLABook(source) {
 
 
 /* =========================================================
-   MLA 9 — IN-TEXT CITATION
+   MLA — IN-TEXT
 ========================================================= */
 
 function formatMLAInText(
@@ -599,15 +702,6 @@ function formatMLAInText(
             source.author.first;
 
     } else if (source.title) {
-
-        /*
-            No author:
-            use a shortened version of the title.
-
-            For now we use the complete title.
-            More sophisticated title shortening can
-            be added later.
-        */
 
         identifier =
             source.title;
@@ -653,7 +747,7 @@ function formatMLAInText(
 
 
 /* =========================================================
-   CHICAGO 18 — BIBLIOGRAPHY
+   CHICAGO — BIBLIOGRAPHY
 ========================================================= */
 
 function formatChicagoBookBibliography(
@@ -663,8 +757,6 @@ function formatChicagoBookBibliography(
     const htmlParts = [];
     const plainParts = [];
 
-
-    /* AUTHOR */
 
     if (
         source.author.last ||
@@ -704,8 +796,6 @@ function formatChicagoBookBibliography(
     }
 
 
-    /* TITLE */
-
     if (source.title) {
 
         const title =
@@ -723,8 +813,6 @@ function formatChicagoBookBibliography(
     }
 
 
-    /* TRANSLATOR */
-
     if (source.translator) {
 
         const translator =
@@ -739,8 +827,6 @@ function formatChicagoBookBibliography(
 
     }
 
-
-    /* EDITION */
 
     if (source.edition) {
 
@@ -760,8 +846,6 @@ function formatChicagoBookBibliography(
 
     }
 
-
-    /* PUBLISHER + YEAR */
 
     let publication = "";
 
@@ -821,7 +905,7 @@ function formatChicagoBookBibliography(
 
 
 /* =========================================================
-   CHICAGO 18 — FIRST FOOTNOTE
+   CHICAGO — FIRST FOOTNOTE
 ========================================================= */
 
 function formatChicagoFirstFootnote(
@@ -832,8 +916,6 @@ function formatChicagoFirstFootnote(
     const htmlParts = [];
     const plainParts = [];
 
-
-    /* AUTHOR */
 
     let author = "";
 
@@ -866,8 +948,6 @@ function formatChicagoFirstFootnote(
     }
 
 
-    /* TITLE */
-
     if (source.title) {
 
         const title =
@@ -882,8 +962,6 @@ function formatChicagoFirstFootnote(
 
     }
 
-
-    /* PUBLICATION INFORMATION */
 
     let publicationInfo = "";
 
@@ -943,23 +1021,21 @@ function formatChicagoFirstFootnote(
     }
 
 
-    html =
-        ensureHTMLPeriod(html);
-
-    plain =
-        ensurePeriod(plain);
-
-
     return {
-        html,
-        plain
+
+        html:
+            ensureHTMLPeriod(html),
+
+        plain:
+            ensurePeriod(plain)
+
     };
 
 }
 
 
 /* =========================================================
-   CHICAGO 18 — SHORTENED FOOTNOTE
+   CHICAGO — SHORTENED FOOTNOTE
 ========================================================= */
 
 function formatChicagoShortFootnote(
@@ -970,8 +1046,6 @@ function formatChicagoShortFootnote(
     const htmlParts = [];
     const plainParts = [];
 
-
-    /* AUTHOR */
 
     const author =
         source.author.last ||
@@ -989,19 +1063,15 @@ function formatChicagoShortFootnote(
     }
 
 
-    /* SHORT TITLE */
-
     if (source.title) {
 
-        const title =
-            source.title;
-
-
         htmlParts.push(
-            `<em>${escapeHTML(title)}</em>`
+            `<em>${escapeHTML(source.title)}</em>`
         );
 
-        plainParts.push(title);
+        plainParts.push(
+            source.title
+        );
 
     }
 
@@ -1024,42 +1094,15 @@ function formatChicagoShortFootnote(
     }
 
 
-    html =
-        ensureHTMLPeriod(html);
-
-    plain =
-        ensurePeriod(plain);
-
-
     return {
-        html,
-        plain
+
+        html:
+            ensureHTMLPeriod(html),
+
+        plain:
+            ensurePeriod(plain)
+
     };
-
-}
-
-
-/* =========================================================
-   HTML PERIOD HELPER
-========================================================= */
-
-function ensureHTMLPeriod(html) {
-
-    const cleaned =
-        clean(html);
-
-
-    if (!cleaned) {
-        return "";
-    }
-
-
-    if (/[.!?]$/.test(cleaned)) {
-        return cleaned;
-    }
-
-
-    return cleaned + ".";
 
 }
 
@@ -1074,6 +1117,7 @@ function formatMainCitation(
 ) {
 
     if (
+        !source ||
         source.type !== "book"
     ) {
 
@@ -1087,7 +1131,9 @@ function formatMainCitation(
 
     if (style === "mla9") {
 
-        return formatMLABook(source);
+        return formatMLABook(
+            source
+        );
 
     }
 
@@ -1105,6 +1151,32 @@ function formatMainCitation(
         html: "",
         plain: ""
     };
+
+}
+
+
+/* =========================================================
+   ACTIVE CITATION SOURCE
+========================================================= */
+
+function getActiveCitationSource() {
+
+    /*
+        Cite mode takes priority.
+
+        This lets a student retrieve a saved source without
+        overwriting whatever they may currently be entering
+        in Step 2.
+    */
+
+    if (citedSource) {
+
+        return citedSource;
+
+    }
+
+
+    return getCurrentSource();
 
 }
 
@@ -1147,12 +1219,16 @@ function updateStyleInterface() {
         config.collectionName;
 
 
-    addCitationButton.textContent =
-        `Add to My ${config.collectionName}`;
-
-
     copyCollectionButton.textContent =
         `Copy ${config.collectionName}`;
+
+
+    if (!editingSourceId) {
+
+        addCitationButton.textContent =
+            `Add to My ${config.collectionName}`;
+
+    }
 
 
     if (style === "mla9") {
@@ -1196,7 +1272,7 @@ function updateStyleInterface() {
 function updatePreview() {
 
     const source =
-        getCurrentSource();
+        getActiveCitationSource();
 
     const style =
         citationStyleSelect.value;
@@ -1211,8 +1287,6 @@ function updatePreview() {
             style
         );
 
-
-    /* MAIN CITATION */
 
     if (!mainCitation.plain) {
 
@@ -1307,7 +1381,20 @@ function updatePreview() {
     }
 
 
-    /* VALIDATION */
+    /*
+        Don't show form validation while Cite mode is active.
+        The user is working with an already-saved source.
+    */
+
+    if (citedSource) {
+
+        validationMessage.textContent =
+            "";
+
+        return;
+
+    }
+
 
     const missing =
         validateBook(source);
@@ -1343,10 +1430,10 @@ function updatePreview() {
 
 
 /* =========================================================
-   ADD SOURCE
+   ADD OR SAVE SOURCE
 ========================================================= */
 
-function addSource() {
+function saveCurrentSource() {
 
     const source =
         getCurrentSource();
@@ -1358,25 +1445,293 @@ function addSource() {
     if (missing.length > 0) {
 
         validationMessage.textContent =
-            `Before adding this source, complete: ${missing.join(", ")}.`;
+            `Before saving this source, complete: ${missing.join(", ")}.`;
 
         return;
 
     }
 
 
+    /*
+        EDIT EXISTING SOURCE
+    */
+
+    if (editingSourceId) {
+
+        const index =
+            savedSources.findIndex(
+                item =>
+                    item.id === editingSourceId
+            );
+
+
+        if (index !== -1) {
+
+            source.id =
+                editingSourceId;
+
+
+            savedSources[index] =
+                source;
+
+        }
+
+
+        saveSources();
+
+        finishEditing();
+
+        renderCollection();
+
+        return;
+
+    }
+
+
+    /*
+        ADD NEW SOURCE
+    */
+
     source.id =
         createSourceId();
 
 
-    savedSources.push(source);
+    savedSources.push(
+        source
+    );
+
 
     saveSources();
 
     renderCollection();
 
+    resetEntryForm();
 
-    citationForm.reset();
+}
+
+
+/* =========================================================
+   EDIT SOURCE
+========================================================= */
+
+function editSource(id) {
+
+    const source =
+        savedSources.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!source) {
+        return;
+    }
+
+
+    /*
+        Stop Cite mode first so the edited form controls
+        the preview normally.
+    */
+
+    stopCiting();
+
+
+    editingSourceId =
+        id;
+
+
+    populateForm(source);
+
+
+    editingNotice.hidden =
+        false;
+
+
+    editingNoticeText.textContent =
+        getSourceDisplayName(source);
+
+
+    cancelEditButton.hidden =
+        false;
+
+
+    addCitationButton.textContent =
+        "Save Changes";
+
+
+    validationMessage.textContent =
+        "";
+
+
+    updatePreview();
+
+
+    scrollToElement(
+        sourceInformationSection
+    );
+
+}
+
+
+/* =========================================================
+   FINISH / CANCEL EDIT
+========================================================= */
+
+function finishEditing() {
+
+    editingSourceId =
+        null;
+
+
+    editingNotice.hidden =
+        true;
+
+
+    editingNoticeText.textContent =
+        "";
+
+
+    cancelEditButton.hidden =
+        true;
+
+
+    const collectionName =
+        STYLE_CONFIG[
+            citationStyleSelect.value
+        ].collectionName;
+
+
+    addCitationButton.textContent =
+        `Add to My ${collectionName}`;
+
+
+    resetEntryForm();
+
+}
+
+
+function cancelEditing() {
+
+    editingSourceId =
+        null;
+
+
+    editingNotice.hidden =
+        true;
+
+
+    editingNoticeText.textContent =
+        "";
+
+
+    cancelEditButton.hidden =
+        true;
+
+
+    const collectionName =
+        STYLE_CONFIG[
+            citationStyleSelect.value
+        ].collectionName;
+
+
+    addCitationButton.textContent =
+        `Add to My ${collectionName}`;
+
+
+    resetEntryForm();
+
+}
+
+
+/* =========================================================
+   CITE SAVED SOURCE
+========================================================= */
+
+function citeSource(id) {
+
+    const source =
+        savedSources.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!source) {
+        return;
+    }
+
+
+    /*
+        We copy the source object rather than referencing
+        the original directly.
+
+        Cite mode should never accidentally modify saved data.
+    */
+
+    citedSource =
+        JSON.parse(
+            JSON.stringify(source)
+        );
+
+
+    citingNotice.hidden =
+        false;
+
+
+    citingNoticeText.textContent =
+        getSourceDisplayName(source);
+
+
+    pageNumberInput.value =
+        "";
+
+
+    validationMessage.textContent =
+        "";
+
+
+    updatePreview();
+
+
+    scrollToElement(
+        citationOutputSection
+    );
+
+
+    /*
+        Put the cursor directly in the page field.
+        Students will often want to type a page immediately.
+    */
+
+    setTimeout(
+        () => {
+
+            pageNumberInput.focus();
+
+        },
+        500
+    );
+
+}
+
+
+/* =========================================================
+   STOP CITING
+========================================================= */
+
+function stopCiting() {
+
+    citedSource =
+        null;
+
+
+    citingNotice.hidden =
+        true;
+
+
+    citingNoticeText.textContent =
+        "";
+
 
     pageNumberInput.value =
         "";
@@ -1388,27 +1743,80 @@ function addSource() {
 
 
 /* =========================================================
-   CREATE ID
+   RESET ENTRY FORM
 ========================================================= */
 
-function createSourceId() {
+function resetEntryForm() {
+
+    citationForm.reset();
+
+    pageNumberInput.value =
+        "";
+
+
+    citedSource =
+        null;
+
+
+    citingNotice.hidden =
+        true;
+
+
+    citingNoticeText.textContent =
+        "";
+
+
+    validationMessage.textContent =
+        "";
+
+
+    updatePreview();
+
+}
+
+
+/* =========================================================
+   SOURCE DISPLAY NAME
+========================================================= */
+
+function getSourceDisplayName(source) {
+
+    let result = "";
+
 
     if (
-        window.crypto &&
-        crypto.randomUUID
+        source.author?.first ||
+        source.author?.last
     ) {
 
-        return crypto.randomUUID();
+        const name = [
+            source.author.first,
+            source.author.last
+        ]
+            .filter(Boolean)
+            .join(" ");
+
+
+        result += name;
 
     }
 
 
-    return (
-        Date.now().toString() +
-        Math.random()
-            .toString(16)
-            .slice(2)
-    );
+    if (source.title) {
+
+        if (result) {
+            result += " — ";
+        }
+
+
+        result +=
+            getFullTitle(source);
+
+    }
+
+
+    return result ||
+        "Saved source";
 
 }
 
@@ -1420,8 +1828,8 @@ function createSourceId() {
 function getSortKey(source) {
 
     return (
-        source.author.last ||
-        source.author.first ||
+        source.author?.last ||
+        source.author?.first ||
         source.title ||
         ""
     ).toLowerCase();
@@ -1439,7 +1847,9 @@ function renderCollection() {
         "";
 
 
-    if (savedSources.length === 0) {
+    if (
+        savedSources.length === 0
+    ) {
 
         worksCitedList.innerHTML =
             `<p class="empty-message">
@@ -1485,34 +1895,71 @@ function renderCollection() {
             "works-cited-entry";
 
 
+        /* CITATION TEXT */
+
         const citationText =
-            document.createElement("span");
+            document.createElement("div");
 
 
         citationText.innerHTML =
             citation.html;
 
 
-        const deleteButton =
-            document.createElement("button");
+        /* ACTIONS */
+
+        const actions =
+            document.createElement("div");
 
 
-        deleteButton.type =
-            "button";
+        actions.className =
+            "source-actions";
 
 
-        deleteButton.className =
-            "delete-citation";
+        /* CITE */
+
+        const citeButton =
+            createActionButton(
+                "Cite",
+                "cite-button",
+                () =>
+                    citeSource(source.id)
+            );
 
 
-        deleteButton.textContent =
-            "Remove";
+        /* EDIT */
+
+        const editButton =
+            createActionButton(
+                "Edit",
+                "",
+                () =>
+                    editSource(source.id)
+            );
 
 
-        deleteButton.addEventListener(
-            "click",
-            () =>
-                deleteSource(source.id)
+        /* REMOVE */
+
+        const removeButton =
+            createActionButton(
+                "Remove",
+                "remove-button",
+                () =>
+                    removeSource(source.id)
+            );
+
+
+        actions.appendChild(
+            citeButton
+        );
+
+
+        actions.appendChild(
+            editButton
+        );
+
+
+        actions.appendChild(
+            removeButton
         );
 
 
@@ -1522,7 +1969,7 @@ function renderCollection() {
 
 
         entry.appendChild(
-            deleteButton
+            actions
         );
 
 
@@ -1536,16 +1983,100 @@ function renderCollection() {
 
 
 /* =========================================================
-   DELETE SOURCE
+   ACTION BUTTON FACTORY
 ========================================================= */
 
-function deleteSource(id) {
+function createActionButton(
+    label,
+    extraClass,
+    handler
+) {
+
+    const button =
+        document.createElement("button");
+
+
+    button.type =
+        "button";
+
+
+    button.className =
+        `source-action-button ${extraClass}`.trim();
+
+
+    button.textContent =
+        label;
+
+
+    button.addEventListener(
+        "click",
+        handler
+    );
+
+
+    return button;
+
+}
+
+
+/* =========================================================
+   REMOVE SOURCE
+========================================================= */
+
+function removeSource(id) {
+
+    const source =
+        savedSources.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!source) {
+        return;
+    }
+
+
+    const confirmed =
+        window.confirm(
+            `Remove "${getSourceDisplayName(source)}"?`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
 
     savedSources =
         savedSources.filter(
-            source =>
-                source.id !== id
+            item =>
+                item.id !== id
         );
+
+
+    /*
+        If the removed source was being edited or cited,
+        clear those states.
+    */
+
+    if (
+        editingSourceId === id
+    ) {
+
+        cancelEditing();
+
+    }
+
+
+    if (
+        citedSource &&
+        citedSource.id === id
+    ) {
+
+        stopCiting();
+
+    }
 
 
     saveSources();
@@ -1583,17 +2114,38 @@ function clearCollection() {
 
 
     if (!confirmed) {
-
         return;
-
     }
 
 
     savedSources = [];
 
+
+    editingSourceId =
+        null;
+
+
+    citedSource =
+        null;
+
+
+    editingNotice.hidden =
+        true;
+
+
+    citingNotice.hidden =
+        true;
+
+
+    cancelEditButton.hidden =
+        true;
+
+
     saveSources();
 
-    renderCollection();
+    resetEntryForm();
+
+    updateStyleInterface();
 
 }
 
@@ -1675,13 +2227,13 @@ async function copyRichText(
 
 
 /* =========================================================
-   COPY MAIN CITATION
+   COPY CURRENT MAIN CITATION
 ========================================================= */
 
 async function copyMainCitation() {
 
     const source =
-        getCurrentSource();
+        getActiveCitationSource();
 
     const style =
         citationStyleSelect.value;
@@ -1704,24 +2256,16 @@ async function copyMainCitation() {
     }
 
 
-    try {
-
-        await copyRichText(
-            citation.html,
-            citation.plain
-        );
+    await copyRichText(
+        citation.html,
+        citation.plain
+    );
 
 
-        showTemporaryButtonMessage(
-            copyMainCitationButton,
-            "Copied!"
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-    }
+    showTemporaryButtonMessage(
+        copyMainCitationButton,
+        "Copied!"
+    );
 
 }
 
@@ -1733,7 +2277,7 @@ async function copyMainCitation() {
 async function copyMLAInText() {
 
     const source =
-        getCurrentSource();
+        getActiveCitationSource();
 
     const page =
         clean(pageNumberInput.value);
@@ -1766,13 +2310,13 @@ async function copyMLAInText() {
 
 
 /* =========================================================
-   COPY CHICAGO FOOTNOTES
+   COPY CHICAGO FIRST NOTE
 ========================================================= */
 
 async function copyFirstFootnote() {
 
     const source =
-        getCurrentSource();
+        getActiveCitationSource();
 
     const page =
         clean(pageNumberInput.value);
@@ -1804,10 +2348,14 @@ async function copyFirstFootnote() {
 }
 
 
+/* =========================================================
+   COPY CHICAGO SHORT NOTE
+========================================================= */
+
 async function copyShortFootnote() {
 
     const source =
-        getCurrentSource();
+        getActiveCitationSource();
 
     const page =
         clean(pageNumberInput.value);
@@ -1975,7 +2523,33 @@ function showTemporaryButtonMessage(
 
 citationForm.addEventListener(
     "input",
-    updatePreview
+    () => {
+
+        /*
+            If the student begins changing the form while a
+            saved source is in Cite mode, leave Cite mode.
+
+            This prevents the preview from appearing "stuck"
+            on the cited source.
+        */
+
+        if (citedSource) {
+
+            citedSource =
+                null;
+
+            citingNotice.hidden =
+                true;
+
+            citingNoticeText.textContent =
+                "";
+
+        }
+
+
+        updatePreview();
+
+    }
 );
 
 
@@ -1999,7 +2573,19 @@ sourceTypeSelect.addEventListener(
 
 addCitationButton.addEventListener(
     "click",
-    addSource
+    saveCurrentSource
+);
+
+
+cancelEditButton.addEventListener(
+    "click",
+    cancelEditing
+);
+
+
+stopCitingButton.addEventListener(
+    "click",
+    stopCiting
 );
 
 
