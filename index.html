@@ -1,1 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>Citation Builder</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="header-content">
+        <div>
+            <p class="eyebrow">Student Research Tool</p>
+            <h1>Citation Builder</h1>
+            <p class="subtitle">
+                Learn what information belongs in a citation while you build it.
+            </p>
+        </div>
+    </div>
+</header>
+
+
+<main class="page-container">
+
+    <!-- =====================================================
+         CITATION SETTINGS
+    ====================================================== -->
+
+    <section class="card">
+
+        <div class="section-heading">
+            <div class="step-number">1</div>
+
+            <div>
+                <h2>Choose Your Citation</h2>
+                <p>
+                    Tell us which citation style and source type you are using.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="settings-grid">
+
+            <div class="form-group">
+                <label for="citationStyle">
+                    Citation Style
+                </label>
+
+                <select id="citationStyle">
+                    <option value="mla9">MLA 9</option>
+                    <option value="chicago" disabled>
+                        Chicago — Coming Soon
+                    </option>
+                </select>
+            </div>
+
+
+            <div class="form-group">
+                <label for="sourceType">
+                    Source Type
+                </label>
+
+                <select id="sourceType">
+                    <option value="book">Book</option>
+                </select>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SOURCE INFORMATION
+    ====================================================== -->
+
+    <section class="card">
+
+        <div class="section-heading">
+            <div class="step-number">2</div>
+
+            <div>
+                <h2>Find the Source Information</h2>
+                <p>
+                    Enter the information you can find in your source.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="instruction-box">
+            <strong>Using a book?</strong>
+            You can usually find most citation information on the
+            title page and copyright page near the beginning of the book.
+        </div>
+
+
+        <form id="citationForm" autocomplete="off">
+
+            <!-- AUTHOR -->
+
+            <fieldset>
+
+                <legend>Author</legend>
+
+                <p class="field-explanation">
+                    Who wrote the book?
+                </p>
+
+
+                <div class="two-column">
+
+                    <div class="form-group">
+
+                        <label for="authorFirst">
+                            First Name
+                            <span class="optional-label">If available</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="authorFirst"
+                            placeholder="George"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="authorLast">
+                            Last Name
+                            <span class="optional-label">If available</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="authorLast"
+                            placeholder="Orwell"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <p class="help-text">
+                    If the book does not identify an author, leave these
+                    fields blank. Your citation can begin with the title.
+                </p>
+
+            </fieldset>
+
+
+            <!-- TITLE -->
+
+            <fieldset>
+
+                <legend>Book Title</legend>
+
+                <p class="field-explanation">
+                    What is the complete title of the book?
+                </p>
+
+
+                <div class="form-group">
+
+                    <label for="bookTitle">
+                        Title
+                        <span class="required-label">Required</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="bookTitle"
+                        placeholder="1984"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="bookSubtitle">
+                        Subtitle
+                        <span class="optional-label">If available</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="bookSubtitle"
+                        placeholder="Leave blank if there is no subtitle"
+                    >
+
+                </div>
+
+            </fieldset>
+
+
+            <!-- PUBLISHER -->
+
+            <fieldset>
+
+                <legend>Publication</legend>
+
+                <p class="field-explanation">
+                    Who published the book, and when was this edition published?
+                </p>
+
+
+                <div class="two-column">
+
+                    <div class="form-group">
+
+                        <label for="publisher">
+                            Publisher
+                            <span class="required-label">Required</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="publisher"
+                            placeholder="Penguin Books"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="publicationYear">
+                            Publication Year
+                            <span class="required-label">Required</span>
+                        </label>
+
+                        <input
+                            type="number"
+                            id="publicationYear"
+                            placeholder="2021"
+                            min="1000"
+                            max="2100"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <p class="help-text">
+                    Use the publication year for the edition you are actually
+                    using, not necessarily the year the book was first published.
+                </p>
+
+            </fieldset>
+
+
+            <!-- OPTIONAL CONTRIBUTORS -->
+
+            <fieldset>
+
+                <legend>Other Information</legend>
+
+                <p class="field-explanation">
+                    Some books include additional information that belongs
+                    in the citation.
+                </p>
+
+
+                <div class="two-column">
+
+                    <div class="form-group">
+
+                        <label for="edition">
+                            Edition
+                            <span class="optional-label">If available</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="edition"
+                            placeholder="2nd"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="translator">
+                            Translator
+                            <span class="optional-label">If available</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="translator"
+                            placeholder="Gregory Rabassa"
+                        >
+
+                    </div>
+
+                </div>
+
+            </fieldset>
+
+        </form>
+
+    </section>
+
+
+    <!-- =====================================================
+         CITATION PREVIEW
+    ====================================================== -->
+
+    <section class="card preview-card">
+
+        <div class="section-heading">
+
+            <div class="step-number">3</div>
+
+            <div>
+                <h2>Check Your Citation</h2>
+                <p>
+                    Your citation updates automatically as you enter information.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="citation-preview-container">
+
+            <p class="preview-label">MLA 9 — Works Cited</p>
+
+            <div
+                id="citationPreview"
+                class="citation-preview"
+                aria-live="polite"
+            >
+                <span class="placeholder-text">
+                    Your citation will appear here.
+                </span>
+            </div>
+
+        </div>
+
+
+        <div
+            id="validationMessage"
+            class="validation-message"
+            aria-live="polite"
+        ></div>
+
+
+        <div class="button-row">
+
+            <button
+                type="button"
+                id="copyCitationButton"
+                class="secondary-button"
+            >
+                Copy Citation
+            </button>
+
+
+            <button
+                type="button"
+                id="addCitationButton"
+                class="primary-button"
+            >
+                Add to My Works Cited
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         WORKS CITED
+    ====================================================== -->
+
+    <section class="card">
+
+        <div class="section-heading">
+
+            <div class="step-number">4</div>
+
+            <div>
+                <h2>My Works Cited</h2>
+                <p>
+                    Sources are saved in this browser and sorted alphabetically.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="works-cited-paper">
+
+            <h3>Works Cited</h3>
+
+            <div id="worksCitedList">
+
+                <p class="empty-message">
+                    You have not added any sources yet.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="button-row">
+
+            <button
+                type="button"
+                id="copyBibliographyButton"
+                class="secondary-button"
+            >
+                Copy Works Cited
+            </button>
+
+
+            <button
+                type="button"
+                id="clearBibliographyButton"
+                class="danger-button"
+            >
+                Clear All
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer class="site-footer">
+
+    <p>
+        Citation Builder • Designed as a learning tool for student research.
+    </p>
+
+</footer>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
