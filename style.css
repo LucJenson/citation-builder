@@ -305,12 +305,11 @@ legend {
 
 
 /* =========================================================
-   INSTRUCTION BOX
+   INFORMATION BOXES
 ========================================================= */
 
-.instruction-box {
-    margin-bottom: 2rem;
-
+.instruction-box,
+.style-explanation {
     padding: 1rem;
 
     border-left: 4px solid var(--primary);
@@ -321,8 +320,25 @@ legend {
 }
 
 
+.instruction-box {
+    margin-bottom: 2rem;
+}
+
+
+.style-explanation {
+    margin-top: 0.5rem;
+}
+
+
+.style-explanation strong {
+    display: block;
+
+    margin-bottom: 0.15rem;
+}
+
+
 /* =========================================================
-   CITATION PREVIEW
+   CITATION OUTPUT
 ========================================================= */
 
 .preview-card {
@@ -330,7 +346,9 @@ legend {
 }
 
 
-.citation-preview-container {
+.output-block {
+    margin-bottom: 1.25rem;
+
     padding: 1.5rem;
 
     background: #fafafa;
@@ -340,8 +358,24 @@ legend {
 }
 
 
+.secondary-output {
+    background: #ffffff;
+}
+
+
+.output-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 1rem;
+
+    margin-bottom: 1rem;
+}
+
+
 .preview-label {
-    margin: 0 0 1rem;
+    margin: 0;
 
     color: var(--muted);
 
@@ -350,6 +384,15 @@ legend {
 
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+
+.output-help {
+    margin: 0.25rem 0 0;
+
+    color: var(--muted);
+
+    font-size: 0.9rem;
 }
 
 
@@ -366,6 +409,16 @@ legend {
 }
 
 
+.inline-citation-preview {
+    min-height: 2rem;
+
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.05rem;
+
+    line-height: 1.8;
+}
+
+
 .placeholder-text {
     color: #98a2b3;
 
@@ -377,6 +430,30 @@ legend {
     font-style: italic;
 
     text-indent: 0;
+}
+
+
+.page-number-panel {
+    margin: 1.5rem 0;
+
+    padding: 1.25rem;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--primary-light);
+}
+
+
+.page-number-panel .form-group {
+    max-width: 250px;
+
+    margin-bottom: 0.75rem;
+}
+
+
+.page-help {
+    margin: 0;
 }
 
 
@@ -440,7 +517,8 @@ button:active {
 }
 
 
-.secondary-button {
+.secondary-button,
+.small-button {
     border: 1px solid #aab2bf;
 
     background: white;
@@ -448,8 +526,18 @@ button:active {
 }
 
 
-.secondary-button:hover {
+.secondary-button:hover,
+.small-button:hover {
     background: #f7f8fa;
+}
+
+
+.small-button {
+    flex: 0 0 auto;
+
+    padding: 0.4rem 0.7rem;
+
+    font-size: 0.85rem;
 }
 
 
@@ -467,7 +555,7 @@ button:active {
 
 
 /* =========================================================
-   WORKS CITED
+   BIBLIOGRAPHY / WORKS CITED
 ========================================================= */
 
 .works-cited-paper {
@@ -569,6 +657,15 @@ button:active {
 
 
 /* =========================================================
+   UTILITIES
+========================================================= */
+
+[hidden] {
+    display: none !important;
+}
+
+
+/* =========================================================
    MOBILE
 ========================================================= */
 
@@ -607,13 +704,18 @@ button:active {
     }
 
 
-    button {
+    .button-row button {
         width: 100%;
     }
 
 
     .works-cited-paper {
         padding: 1.5rem;
+    }
+
+
+    .output-heading {
+        flex-direction: column;
     }
 
 }
